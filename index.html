@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ادَّخر | التطبيق</title>
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root{
+      --bg:#FAFAFA; --card:#FFFFFF; --teal:#0f766e; --teal-700:#0b605a; --teal-50:#e7f3f2;
+      --green:#22c55e; --red:#ef4444; --blue:#0ea5e9; --text:#1f2937; --muted:#6b7280;
+      --shadow:0 10px 25px rgba(0,0,0,.08); --space:clamp(12px, 2vw, 22px);
+      --h1:clamp(22px, 3vw, 34px); --amount:clamp(22px, 3.2vw, 32px);
+      --btn:clamp(14px, 1.5vw, 16px); --ring:clamp(120px, 18vw, 160px); --rowH:clamp(56px, 7.5vw, 72px);
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:#1f2937;font-family:Tahoma,Arial,"Segoe UI","Noto Naskh Arabic",sans-serif;min-height:100svh;display:flex;justify-content:center}
+    .container{width:min(100%,1100px);padding:var(--space)}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:var(--space)}
+    .logoWrap{width:46px;height:46px;border-radius:12px;background:var(--teal-50);display:grid;place-items:center;box-shadow:inset 0 0 0 2px rgba(15,118,110,.12);overflow:hidden}
+    .logoWrap img{width:34px;height:34px;object-fit:contain}
+    header h1{margin:0;font-size:var(--h1);color:var(--teal-700);letter-spacing:.5px}
+    .balanceCard{background:var(--teal);color:#fff;border-radius:26px;padding:18px;box-shadow:var(--shadow);margin-bottom:var(--space)}
+    .balanceTop{display:flex;align-items:center;gap:10px;justify-content:space-between}
+    .amount{font-size:var(--amount);font-weight:900;margin:4px 0 14px}
+    .goalBadge{background:rgba(255,255,255,.15);padding:6px 10px;border-radius:999px;font-size:14px}
+    .goalEdit{background:#ffffff;color:#0b605a;border:none;border-radius:999px;padding:6px 10px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .pill{border:none;border-radius:999px;padding:12px 16px;font-weight:800;font-size:var(--btn);display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+    .pill.green{background:#e9f9ef;color:#0f8a42}.pill.red{background:#fde8e8;color:#b42318}
+    .card{background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid #eee;margin-bottom:var(--space)}
+    .progressWrap{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+    @media (max-width:520px){.progressWrap{grid-template-columns:1fr;text-align:center}}
+    .ring{position:relative;width:var(--ring);height:var(--ring)} .ring svg{transform:rotate(-90deg);width:100%;height:100%}
+    .ring circle{fill:none;stroke-linecap:round;stroke-width:12px}.ring .bg{stroke:#e5e7eb}.ring .bar{stroke:url(#grad)}
+    .ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}.center .icon{font-size:28px;margin-bottom:6px}.center .pct{font-weight:800}
+    .row{display:flex;align-items:center;gap:12px;height:var(--rowH);background:#fff;border:1px solid #eee;border-radius:16px;padding-inline:16px;box-shadow:var(--shadow);margin-bottom:12px}
+    .row .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:#f1f5f9;color:#0b605a}
+    .row .title{font-size:18px;font-weight:700}.row .chev{margin-inline-start:auto;color:#9aa3ae}
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:10}
+    .modal{width:min(92%,460px);background:#fff;border-radius:16px;padding:16px;border:1px solid #eee;box-shadow:var(--shadow)}
+    .modal h3{margin:0 0 10px;font-size:20px}.modal .row{display:flex;gap:8px;margin:10px 0}.modal input{flex:1;padding:12px;border:1px solid #ddd;border-radius:12px;font-size:18px;text-align:center}
+    .modal .actions{display:flex;gap:8px}.btn{border:none;cursor:pointer;padding:12px 14px;border-radius:12px;font-weight:800}.btn.close{background:#f0f0f0}.btn.ok{background:#22c55e;color:#fff}.btn.secondary{background:#e9eef5;color:#1f2937}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;background:#111;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none}
+    .toast.show{opacity:1;transition:opacity .25s}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logoWrap"><img src="icon-192.png" alt="شعار ادخر" /></div>
+      <h1>ادَّخر</h1>
+    </header>
+
+    <section class="balanceCard" aria-label="الرصيد الحالي">
+      <div class="balanceTop">
+        <div class="amount"><span id="balance">0</span> ر.س</div>
+        <div class="goalBadge" id="goalBadge" style="display:none;">الهدف: <span id="goal">0</span> ر.س</div>
+        <button class="goalEdit" id="editGoal">تعديل الهدف</button>
+      </div>
+      <div class="actions">
+        <button class="pill green" id="btnDeposit">أضف مبلغ +</button>
+        <button class="pill red" id="btnWithdraw">سحب مبلغ ⇄</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="progressWrap">
+        <div class="ring" aria-label="نسبة تحقيق الهدف">
+          <svg viewBox="0 0 140 140">
+            <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#4cc9f0;stop-opacity:1" />
+            </linearGradient></defs>
+            <circle class="bg" cx="70" cy="70" r="55"></circle>
+            <circle class="bar" cx="70" cy="70" r="55" stroke-dasharray="345" stroke-dashoffset="345"></circle>
+          </svg>
+          <div class="center"><div class="icon">💰</div><div class="pct" id="pctCenter">—</div></div>
+        </div>
+        <div>
+          <h2 id="headline" style="margin:0 0 6px 0;">أضف هدفك لتبدأ الإدخار</h2>
+          <p id="goalLine" style="display:none;">الهدف الحالي: <strong><span id="goal2">0</span> ر.س</strong></p>
+          <button id="setGoal" class="btn secondary">حدد هدفك</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="row" id="rowWheel"><div class="ico">🎡</div><div class="title">وش أسوي؟</div><div class="chev">›</div></div>
+      <div class="row" id="rowGoals"><div class="ico">🎯</div><div class="title">أهدافي</div><div class="chev">›</div></div>
+    </section>
+  </div>
+
+  <!-- Popup Amount -->
+  <div class="backdrop" id="backdrop"><div class="modal">
+    <h3 id="modalTitle">إدخال مبلغ</h3>
+    <div class="row"><input id="amount" type="number" inputmode="decimal" min="1" placeholder="المبلغ بالريال" /></div>
+    <div class="row" style="justify-content:space-between;color:#6b7280;font-size:13px;"><span id="hint">ادخل المبلغ لإتمام العملية</span><span id="quickFill" style="cursor:pointer;color:#0ea5e9;">+50</span></div>
+    <div class="actions"><button class="btn close" id="closeModal">إلغاء</button><button class="btn ok" id="okModal">تأكيد</button></div>
+  </div></div>
+
+  <!-- Popup Goal -->
+  <div class="backdrop" id="goalBackdrop"><div class="modal">
+    <h3>ضبط الهدف</h3>
+    <div class="row"><input id="goalInput" type="number" inputmode="numeric" min="1" placeholder="هدفك بالريال" /></div>
+    <div class="actions"><button class="btn close" id="closeGoal">إلغاء</button><button class="btn ok" id="saveGoal">حفظ</button></div>
+  </div></div>
+
+  <div class="toast" id="toast">تم الحفظ ✅</div>
+
+  <script>
+    const state = { balance: 0, goal: null, mode: 'deposit' };
+    const balanceEl = document.getElementById('balance');
+    const goalBadge = document.getElementById('goalBadge');
+    const goalEl = document.getElementById('goal');
+    const goal2El = document.getElementById('goal2');
+    const pctCenter = document.getElementById('pctCenter');
+    const ringBar = document.querySelector('.ring .bar');
+    const headline = document.getElementById('headline');
+    const goalLine = document.getElementById('goalLine');
+    const setGoalBtn = document.getElementById('setGoal');
+    const editGoalBtn = document.getElementById('editGoal');
+    const backdrop = document.getElementById('backdrop');
+    const amountInput = document.getElementById('amount');
+    const hint = document.getElementById('hint');
+    const quickFill = document.getElementById('quickFill');
+    const goalBackdrop = document.getElementById('goalBackdrop');
+    const goalInput = document.getElementById('goalInput');
+    const fmt = (n)=> n.toLocaleString('ar-EG');
+    function updateUI(){
+      balanceEl.textContent = fmt(state.balance);
+      const circ = 2 * Math.PI * 55;
+      if(state.goal && state.goal > 0){
+        goalEl.textContent = fmt(state.goal); goal2El.textContent = fmt(state.goal);
+        goalBadge.style.display = 'inline-block'; goalLine.style.display = 'block'; headline.textContent = 'استمر ووصلت';
+        const pct = Math.max(0, Math.min(999, Math.round((state.balance/state.goal)*100)));
+        ringBar.setAttribute('stroke-dasharray', circ.toFixed(2)); ringBar.setAttribute('stroke-dashoffset', (circ - (pct/100)*circ).toFixed(2));
+        pctCenter.textContent = pct + '%';
+      } else {
+        goalBadge.style.display = 'none'; goalLine.style.display = 'none'; headline.textContent = 'أضف هدفك لتبدأ الإدخار';
+        ringBar.setAttribute('stroke-dasharray', circ.toFixed(2)); ringBar.setAttribute('stroke-dashoffset', circ.toFixed(2));
+        pctCenter.textContent = '—';
+      }
+      localStorage.setItem('iddakhar_site', JSON.stringify(state));
+    }
+    function load(){
+      try{
+        const raw = localStorage.getItem('iddakhar_site');
+        if(raw){ const o = JSON.parse(raw); if(+o.balance>=0) state.balance=+o.balance; state.goal = (o.goal===null? null : (+o.goal>0? +o.goal : null)); }
+      }catch(e){}
+    }
+    function openAmountModal(mode){
+      state.mode = mode;
+      document.getElementById('modalTitle').textContent = mode==='deposit' ? 'إضافة مبلغ' : 'سحب مبلغ';
+      hint.textContent = mode==='deposit' ? 'سيتم إضافة المبلغ إلى رصيدك' : 'سيتم خصم المبلغ من رصيدك';
+      quickFill.textContent = mode==='deposit' ? '+50' : '-50';
+      amountInput.value=''; backdrop.style.display='flex'; amountInput.focus();
+    }
+    function closeAmountModal(){ backdrop.style.display='none'; }
+    function openGoalModal(){ goalInput.value = state.goal ? state.goal : ''; goalBackdrop.style.display='flex'; goalInput.focus(); }
+    function closeGoalModal(){ goalBackdrop.style.display='none'; }
+    function toast(s){ const t=document.getElementById('toast'); t.textContent=s; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1500); }
+
+    document.getElementById('btnDeposit').addEventListener('click', ()=> openAmountModal('deposit'));
+    document.getElementById('btnWithdraw').addEventListener('click', ()=> openAmountModal('withdraw'));
+    document.getElementById('closeModal').addEventListener('click', closeAmountModal);
+    document.getElementById('okModal').addEventListener('click', ()=>{
+      const val = parseFloat(amountInput.value);
+      if(isNaN(val) || val<=0){ toast('أدخل مبلغ صحيح'); return; }
+      if(state.mode==='deposit'){ state.balance += Math.round(val); toast('تمت الإضافة ✅'); }
+      else{ if(val>state.balance){ toast('الرصيد غير كافٍ'); return; } state.balance -= Math.round(val); toast('تم السحب ✅'); }
+      updateUI(); closeAmountModal();
+    });
+    backdrop.addEventListener('click', (e)=>{ if(e.target.id==='backdrop') closeAmountModal(); });
+    quickFill.addEventListener('click', ()=>{ const step=50; amountInput.value=(parseFloat(amountInput.value||0)+step).toString(); });
+    setGoalBtn.addEventListener('click', openGoalModal);
+    editGoalBtn.addEventListener('click', openGoalModal);
+    document.getElementById('closeGoal').addEventListener('click', closeGoalModal);
+    document.getElementById('saveGoal').addEventListener('click', ()=>{
+      const v = parseInt(goalInput.value, 10);
+      if(!isNaN(v) && v>0){ state.goal = v; updateUI(); closeGoalModal(); toast('تم ضبط الهدف ✅'); }
+      else{ toast('أدخل رقماً صحيحاً'); }
+    });
+    goalBackdrop.addEventListener('click', (e)=>{ if(e.target.id==='goalBackdrop') closeGoalModal(); });
+
+    if ('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(console.error)); }
+    load(); updateUI();
+  </script>
+</body>
+</html>
